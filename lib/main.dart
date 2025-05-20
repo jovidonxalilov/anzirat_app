@@ -1,15 +1,30 @@
+import 'package:anzirat/navigation/router.dart';
 import 'package:anzirat/page/anzirat_detail.dart';
+import 'package:anzirat/page/sotti_detail.dart';
+import 'package:anzirat/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => LocationReaderProvider()..startListening(),
-      child: MyApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) {
+          final provider = LocationProvider();
+          provider.startListening();
+          return provider;
+        },)
+      ],
+      child: ScreenUtilInit(
+        child: MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          routerConfig: router
+        ),
+      ),
     ),
   );
 }
@@ -21,7 +36,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(title: Center(child: Text("Anzirat buvi App"))),
-        body: Consumer<LocationReaderProvider>(
+        body: Consumer<LocationProvider>(
           builder: (context, provider, _) {
             if (provider.isLoading) {
               return const CircularProgressIndicator();
@@ -61,7 +76,7 @@ class MyApp extends StatelessWidget {
                               color: Colors.black38,
                               fontSize: 20,
                               fontWeight: FontWeight.w600)),
-                      Text(provider.country,
+                      Text(provider.saveCountry,
                           style: TextStyle(
                               color: Colors.black,
                               fontSize: 20,

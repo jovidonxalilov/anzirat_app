@@ -1,59 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
+import '../common/bottom_navigation_bar_widget.dart';
+import '../navigation/routes.dart';
+import '../provider.dart';
 
-class LocationReaderProvider with ChangeNotifier {
-  double? lat;
-  double? long;
-  String country = "yuklanmoqda";
-  String city = "yuklanmoqda";
-  String locality = "Yuklanmoqda...";
-  bool isWorking = false;
-  bool isLoading = true;
+class FlutterMap extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<LocationProvider>(
+      builder: (context, provider, _) {
+        final lat = provider.lat;
+        final long = provider.long;
 
-  void startListening() {
-    FirebaseFirestore.instance
-        .collection('location')
-        .doc('shipiyon')
-        .snapshots()
-        .listen((doc) {
-      if (doc.exists) {
-        lat = (doc.data()?['lat'] as num?)?.toDouble();
-        long = (doc.data()?['long'] as num?)?.toDouble();
-        isWorking = doc.data()?['isWorking'] ?? false;
-
-        if (lat != null && long != null) {
-          _fetchLocationName(lat!, long!);
+        if (lat == null || long == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
-        notifyListeners();
-      }
-    });
-  }
-
-  Future<void> _fetchLocationName(double lat, double long) async {
-    isLoading = true;
-    notifyListeners();
-
-    final url = Uri.parse(
-      'https://www.gps-coordinates.net/geoproxy?q=$lat+$long&key=9416bf2c8b1d4751be6a9a9e94ea85ca&no_annotations=1&language=en',
+        return Scaffold(
+          appBar: AppBar(title: Text("Google Map")),
+          body: GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: LatLng(lat, long),
+              zoom: 16,
+            ),
+            markers: {
+              Marker(
+                markerId: MarkerId("current_location"),
+                position: LatLng(lat, long),
+                infoWindow: InfoWindow(title: provider.locality),
+              ),
+            },
+            onMapCreated: (controller) {
+            },
+          ),
+          bottomNavigationBar: BottomNavigationBarMap(selectedIndex: 0,
+            onTap: (index) {
+              switch (index) {
+                case 0:
+                  context.push(Routes.home);
+                  break;
+                case 1:
+                  context.push(Routes.map);
+                  break;
+              }
+            },),
+        );
+      },
     );
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        country = data['results'][0]['components']['country'] ?? "Noma'lum joy";
-        city = data['results'][0]['components']['city'] ?? "Noma'lum joy";
-        locality = data['results'][0]['components']['locality'] ?? "Noma'lum joy";
-      } else {
-        locality = "API xato: ${response.statusCode}";
-      }
-    } catch (e) {
-      locality = "Joy nomini olishda xato";
-    }
-
-    isLoading = false;
-    notifyListeners();
   }
 }
