@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:yandex_mapkit_lite/yandex_mapkit_lite.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  // YandexMapController.("YOUR_API_KEY");
   runApp(
     MultiProvider(
       providers: [
